@@ -859,6 +859,20 @@ wheels = [
 ]
 
 [[package]]
+name = "tavily-python"
+version = "0.7.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "requests" },
+    { name = "tiktoken" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6e/87/995a176c81887000a14556b810be986530d723224a71e10ccb312b480637/tavily_python-0.7.22.tar.gz", hash = "sha256:050c0113309b516f58fbdc484d6091efa7ce6c016c2a2cd9f111581269f00dfe", size = 22393, upload-time = "2026-02-26T15:05:00.794Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/43/9f977f236c641c7903939788b088c3575e9a5dba0b9ca9a5586a1f02bb9e/tavily_python-0.7.22-py3-none-any.whl", hash = "sha256:25d05f02be3fa2508ff1c114196b714e069d75312c26ddf747c9f5bdc617bbb3", size = 18136, upload-time = "2026-02-26T15:04:59.608Z" },
+]
+
+[[package]]
 name = "tenacity"
 version = "9.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -941,6 +955,7 @@ dependencies = [
     { name = "langchain-cerebras" },
     { name = "langgraph" },
     { name = "python-dotenv" },
+    { name = "tavily-python" },
 ]
 
 [package.metadata]
@@ -948,6 +963,7 @@ requires-dist = [
     { name = "langchain-cerebras", specifier = ">=0.8.2" },
     { name = "langgraph", specifier = ">=1.0.10" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "tavily-python", specifier = ">=0.7.22" },
 ]
 
 [[package]]

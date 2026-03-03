@@ -1,14 +1,10 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from typing import TypedDict
 
-from langchain_cerebras import ChatCerebras
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 
-llm = ChatCerebras(model="gpt-oss-120b")
+from LLMs.cerebras import CEREBRAS
+from tools.tavily import TRAVILY
 
 
 class Trecl(TypedDict):
@@ -18,14 +14,23 @@ class Trecl(TypedDict):
 
 
 def company_researcher(state: Trecl) -> dict:
-    print(f"🕵️‍♂️ Researching {state['company_name']}...")
+    company = state["company_name"]
+
+    print(f"🕵️‍♂️ Researching {company}...")
+
+    search_results = TRAVILY.search(
+        query=f"{company} startup what they do product tech stacl", max_results=3
+    )
+
     message = [
         SystemMessage(
-            content="You are a Deep research Agent. You are currently under test - So generate Dumy Data from your knowledge or make something up if needed. TASK - Find about the given/mentioned company/startup, and output a very short, plain text, single paragraph summary about them"
+            content="You are a Deep research Agent. Use the Search Results and output a short crips plain text summary"
         ),
-        HumanMessage(content="Find something about Zepto"),
+        HumanMessage(
+            content=f"Company Name = {state['company_name']}\nSearch Results  = {search_results}"
+        ),
     ]
-    response = llm.invoke(message)
+    response = CEREBRAS.invoke(message)
     return {"company_summary": response.content}
 
 
@@ -35,9 +40,9 @@ def cold_email_writer(state: Trecl) -> dict:
         SystemMessage(
             content="You are a Smart Writer Agent. You are currently under test - So generate Dumy Data from your knowledge or make something up is needed. TASK - Write a cold email about the given company, by reading its short summary -  "
         ),
-        AIMessage(content=state["company_summary"]),
+        AIMessage(content=f"Company Name = {state['company_summary']}"),
     ]
-    response = llm.invoke(message)
+    response = CEREBRAS.invoke(message)
     return {"cold_email": response.content}
 
 
