@@ -12,33 +12,36 @@ def cold_email_writer_node(state: TreclState) -> dict:
     """
     LangGraph node representing the Writer Agent.
     
-    1. Reads the `company_summary` from the graph state.
-    2. Prompts the LLM to draft a realistic cold email under 150 words.
-    3. Enforces that the draft leverages the extracted technical facts.
+    1. Extracts the custom project pitch and ranked pain points from the state.
+    2. Uses a strict prompt to write a highly targeted, 150-word cold email.
     
     Args:
-        state (TreclState): The current graph state containing `company_name` and `company_summary`.
+        state (TreclState): The current graph state.
         
     Returns:
         dict: A dictionary update patch containing the `cold_email` key.
     """
     company = state["company_name"]
-    research = state["company_summary"]
+    pain_points = state.get("pain_points_ranked", "No pain points found.")
+    project = state.get("project_ideas", "No project idea found.")
     
-    print(f"\n✍️ Writing targeted cold email for {company}...")
+    print(f"\n[~] Writing targeted cold email for {company}...")
 
     # Step 1: Build the strict writing prompt
-    prompt = f"""Write a cold email from a software developer seeking an internship at {company}.
+    prompt = f"""Write a compelling cold email from a software developer seeking an internship or role at {company}.
     
-    Company Research:
-    {research}
+    Company's Top Pain Points:
+    {pain_points}
+    
+    My Proposed Custom Project:
+    {project}
     
     The email MUST adhere to ALL of the following rules:
-    - Subject line that references something SPECIFIC about the company's tech stack or product.
+    - Subject line that references the core technical value proposition of my project.
     - Be strictly under 150 words.
-    - Reference ONE specific technical detail from the research (e.g. mention their DB, language, or scaling problem).
-    - Propose ONE specific contribution based on their likely technical challenges.
-    - End with a clear, direct, and polite ask.
+    - Assert that you have thoroughly researched their engineering needs.
+    - Propose the EXACT project listed above as a way you can add immediate value.
+    - End with a clear, direct, and polite call to action (e.g., asking for a 10-minute chat).
     
     Format output strictly as:
     SUBJECT: [subject line]
@@ -53,5 +56,5 @@ def cold_email_writer_node(state: TreclState) -> dict:
     # Step 2: Generate Draft
     response = llm.invoke(messages)
     
-    print("\n✅ Draft Complete.")
+    print("\n[+] Draft Complete.")
     return {"cold_email": response.content}

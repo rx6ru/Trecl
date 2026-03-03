@@ -54,3 +54,4 @@ TAVILY_API_KEYS = get_required_env_list("TAVILY_API_KEY")
 
 # Feature Flags
 USE_MOCK_SEARCH = os.getenv("USE_MOCK_SEARCH", "true").lower() == "true"
+USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "true").lower() == "true"

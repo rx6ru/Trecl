@@ -24,7 +24,7 @@ def company_researcher_node(state: TreclState) -> dict:
         dict: A dictionary update patch containing the `company_summary` key.
     """
     company = state["company_name"]
-    print(f"\n🕵️‍♂️ Researching {company} using Web Search...")
+    print(f"\n[*]  Researching {company} using Web Search...")
 
     # Step 1: Gather raw internet data
     raw_research = perform_deep_company_research(company)
@@ -50,5 +50,5 @@ def company_researcher_node(state: TreclState) -> dict:
     # Step 3: Extract & Synthesize
     response = llm.invoke(messages)
     
-    print("\n✅ Research Complete.")
+    print("\n[+]  Research Complete.")
     return {"company_summary": response.content}
