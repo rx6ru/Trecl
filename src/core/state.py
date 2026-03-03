@@ -5,6 +5,12 @@ This module defines the central 'memory' of the multi-agent system.
 
 from typing import TypedDict
 
+class GithubIssue(TypedDict):
+    """Schema for a single scraped GitHub issue."""
+    title: str
+    url: str
+    repo_name: str
+
 class TreclState(TypedDict):
     """
     The shared state dictionary updated by agents throughout the graph execution.
@@ -17,6 +23,8 @@ class TreclState(TypedDict):
             Populated by the `company_researcher_node`.
         company_jobs (str): The synthesized open roles and hiring needs.
             Populated by the `job_decoder_node`.
+        github_issues (list[GithubIssue]): Valid open-source issues the candidate can solve.
+            Populated by the `github_analyst_node`.
         pain_points_ranked (str): Detailed ranking of company's technical pain points.
             Populated by the `pain_synthesizer_node`.
         project_ideas (str): Specific custom project ideas based on the user's stack.
@@ -29,6 +37,7 @@ class TreclState(TypedDict):
     user_stack: list[str]
     company_summary: str
     company_jobs: str
+    github_issues: list[GithubIssue]
     pain_points_ranked: str
     project_ideas: str
     cold_email: str

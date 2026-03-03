@@ -12,9 +12,24 @@ class MockLLMResponse:
     def __init__(self, content: str):
         self.content = content
 
+class MockStructuredRunner:
+    """Mocks the LangChain Runnable returned by with_structured_output."""
+    def __init__(self, schema):
+        self.schema = schema
+
+    def invoke(self, messages):
+        # Returns an instantiated Pydantic object directly
+        return self.schema(
+            pain_points_ranked="1. Kubernetes resource scaling costs are too high\n2. PostgreSQL queries are slow due to lack of indexing\n3. Deployment pipelines are flaky",
+            project_ideas="Project: Auto-Scaling K8s Operator in Go\nDetails: Build a custom Kubernetes operator using Go that monitors traffic spikes and dynamically provisions exact node resources, reducing Zepto's cloud spend while ensuring 100% uptime during peak delivery hours."
+        )
+
 class MockLLM:
     """A proxy LLM class used for local testing to avoid API limits and costs."""
     
+    def with_structured_output(self, schema):
+        return MockStructuredRunner(schema)
+        
     def invoke(self, messages) -> MockLLMResponse:
         """Mocks the LangChain execution, returning fixed outputs depending on context."""
         
