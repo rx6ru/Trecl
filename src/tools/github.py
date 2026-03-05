@@ -49,8 +49,9 @@ def resolve_github_handle(company_name: str) -> str:
 
 def fetch_github_issues(org_handle: str) -> list[dict]:
     """
-    Fetches up to 5 actionable 'good first issue' or 'help wanted' tickets
-    from the organization's public repositories.
+    Fetches the top 10 most-commented open issues across the org's repos.
+    These reveal real architectural pain points, not just beginner-friendly tasks.
+    Also searches for issues labeled 'bug' or 'enhancement' as supplementary signals.
     """
     if USE_MOCK_GITHUB:
         return [
@@ -62,23 +63,37 @@ def fetch_github_issues(org_handle: str) -> list[dict]:
         
     g = Github(GITHUB_ACCESS_TOKEN)
     results = []
+    seen_urls = set()
     
-    # PyGithub's search_issues is the fastest way to query across an entire org
-    # We look specifically for open issues labeled 'good first issue' to find easy entry points
-    query = f"org:{org_handle} is:open is:issue label:\"good first issue\""
+    # Primary query: top open issues sorted by most comments (highest engagement = real pain)
+    queries = [
+        f"org:{org_handle} is:open is:issue sort:comments-desc",
+        f"org:{org_handle} is:open is:issue label:bug",
+        f"org:{org_handle} is:open is:issue label:enhancement",
+    ]
     
-    try:
-        issues = g.search_issues(query, sort="created", order="desc")
-        for issue in issues[:5]:
-            results.append({
-                "title": issue.title,
-                "url": issue.html_url,
-                "repo_name": issue.repository.name
-            })
-    except Exception as e:
-        print(f"[!] Failed to fetch GitHub issues: {e}")
-        
-    return results
+    for query in queries:
+        try:
+            issues = g.search_issues(query, sort="comments", order="desc")
+            # Safely iterate with bounds checking
+            count = 0
+            for issue in issues:
+                if count >= 5:
+                    break
+                if issue.html_url in seen_urls:
+                    continue
+                seen_urls.add(issue.html_url)
+                results.append({
+                    "title": issue.title,
+                    "url": issue.html_url,
+                    "repo_name": issue.repository.name
+                })
+                count += 1
+        except Exception as e:
+            print(f"[!] GitHub issue query failed ('{query[:40]}...'): {e}")
+    
+    # Cap at 10 total to keep context manageable
+    return results[:10]
 
 def fetch_github_prs(org_handle: str) -> list[dict]:
     """
@@ -101,12 +116,16 @@ def fetch_github_prs(org_handle: str) -> list[dict]:
     
     try:
         prs = g.search_issues(query, sort="updated", order="desc")
-        for pr in prs[:5]:
+        count = 0
+        for pr in prs:
+            if count >= 5:
+                break
             results.append({
                 "title": pr.title,
                 "url": pr.html_url,
                 "repo_name": pr.repository.name
             })
+            count += 1
     except Exception as e:
         print(f"[!] Failed to fetch GitHub PRs: {e}")
         

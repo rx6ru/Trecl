@@ -92,7 +92,7 @@ def perform_job_research(company_name: str) -> str:
             search_result = tavily_client.search(query=query, max_results=3)
             for r in search_result.get('results', []):
                 clean_content = r['content'][:300].replace('\n', ' ')
-                results.append(f"- {r['title']}: {clean_content}")
+                results.append(f"- {r['title']} ({r.get('url', 'N/A')}): {clean_content}")
         except Exception as e:
             results.append(f"Failed to execute query '{query}': {str(e)}")
             

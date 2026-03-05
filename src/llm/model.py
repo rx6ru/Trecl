@@ -84,8 +84,9 @@ def get_llm():
         return MockLLM()
         
     return ChatCerebras(
-        model="llama3.1-8b", # Falling back to known supported models if needed - using generic default
+        model="gpt-oss-120b",
         api_key=SecretStr(CEREBRAS_API_KEYS.get_next_key()),
+        max_tokens=8192,
     )
 
 # Note: We keep this as a function to intentionally get a fresh key per initialization
