@@ -1196,6 +1196,7 @@ dependencies = [
     { name = "pygithub" },
     { name = "python-dotenv" },
     { name = "tavily-python" },
+    { name = "tenacity" },
 ]
 
 [package.metadata]
@@ -1206,6 +1207,7 @@ requires-dist = [
     { name = "pygithub", specifier = ">=2.8.1" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "tavily-python", specifier = ">=0.7.22" },
+    { name = "tenacity", specifier = ">=9.1.4" },
 ]
 
 [[package]]

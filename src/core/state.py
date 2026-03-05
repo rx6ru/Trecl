@@ -3,7 +3,9 @@ State definitions for the Trecl graph.
 This module defines the central 'memory' of the multi-agent system.
 """
 
-from typing import TypedDict
+from typing import TypedDict, Annotated, Sequence
+from langchain_core.messages import BaseMessage
+from langgraph.graph.message import add_messages
 
 class GithubIssue(TypedDict):
     """Schema for a single scraped GitHub issue."""
@@ -27,6 +29,21 @@ class OpportunityItem(TypedDict):
     relevance: str       # One-line explanation of why this matters for the user
     action_tier: str     # "Tier 1: Active Listing" | "Tier 2: OSS Pitch" | "Tier 3: Cold Outreach"
     suggested_action: str  # Concrete next step, e.g. "Submit PR fixing issue #142"
+
+class GithubAnalystState(TypedDict):
+    """
+    Isolated state for the GitHub Analyst ReAct sub-graph.
+    This prevents intermediate tool calls from bloating the global TreclState.
+    """
+    # INPUT from main graph
+    company_name: str
+    
+    # LOCAL ReAct Scratchpad (Isolates tool calls)
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+    
+    # OUTPUT to main graph
+    github_issues: list[GithubIssue]
+    github_prs: list[GithubPR]
 
 class TreclState(TypedDict):
     """
