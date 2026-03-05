@@ -9,6 +9,7 @@ from core.state import TreclState
 from agents.researcher import company_researcher_node
 from agents.job_decoder import job_decoder_node
 from agents.pain_synthesizer import pain_synthesizer_node
+from agents.github_analyst import github_analyst_node
 from agents.writer import cold_email_writer_node
 
 def build_graph():
@@ -31,15 +32,18 @@ def build_graph():
     # 2. Add Nodes (Agents)
     graph.add_node("researcher", company_researcher_node)
     graph.add_node("job_decoder", job_decoder_node)
+    graph.add_node("github_analyst", github_analyst_node)
     graph.add_node("pain_synthesizer", pain_synthesizer_node)
     graph.add_node("writer", cold_email_writer_node)
     
     # 3. Define the DAG Execution Order (Parallel Fan-Out / Fan-In)
     graph.add_edge(START, "researcher")
     graph.add_edge(START, "job_decoder")
+    graph.add_edge(START, "github_analyst")
     
     graph.add_edge("researcher", "pain_synthesizer")
     graph.add_edge("job_decoder", "pain_synthesizer")
+    graph.add_edge("github_analyst", "pain_synthesizer")
     
     graph.add_edge("pain_synthesizer", "writer")
     graph.add_edge("writer", END)
@@ -71,6 +75,8 @@ if __name__ == "__main__":
             "user_stack": ["Python", "Go", "PostgreSQL", "Docker"],
             "company_summary": "",
             "company_jobs": "",
+            "github_issues": [],
+            "github_prs": [],
             "pain_points_ranked": "",
             "project_ideas": "",
             "cold_email": ""
@@ -85,6 +91,14 @@ if __name__ == "__main__":
         print("[>] HIRING SIGNALS (Job Decoder)")
         print("=" * 60)
         print(result.get("company_jobs", "Failed to decode jobs."))
+        
+        print("\n" + "=" * 60)
+        print("[>] OPEN SOURCE FOOTPRINT (GitHub Analyst)")
+        print("=" * 60)
+        issues = result.get("github_issues", [])
+        prs = result.get("github_prs", [])
+        print(f"Approachable Issues: {len(issues)}")
+        print(f"Stale/Unreviewed PRs: {len(prs)}")
         
         print("\n" + "=" * 60)
         print("[>] TOP PAIN POINTS (Pain Synthesizer)")

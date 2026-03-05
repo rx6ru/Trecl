@@ -35,10 +35,21 @@ def pain_synthesizer_node(state: TreclState) -> dict:
     company = state["company_name"]
     research = state["company_summary"]
     jobs = state.get("company_jobs", "No specific job signals.")
+    issues = state.get("github_issues", [])
+    prs = state.get("github_prs", [])
     user_stack = ", ".join(state.get("user_stack", []))
     user_domain = state.get("user_domain", "software engineer")
     
     print(f"\n[*] Synthesizing pain points & project ideas for {company}...")
+    
+    # Format the OSS context to be human readable
+    oss_context = "No accessible open source footprint found."
+    if issues or prs:
+        oss_context = "Open Source Footprint:\n"
+        if issues:
+            oss_context += "- Approachable Issues:\n" + "\n".join([f"  * {i['title']} ({i['repo_name']})" for i in issues]) + "\n"
+        if prs:
+            oss_context += "- Stale/Unreviewed PRs:\n" + "\n".join([f"  * {p['title']} ({p['repo_name']})" for p in prs]) + "\n"
 
     synthesis_prompt = f"""You are an elite technical consultant.
     
@@ -48,12 +59,15 @@ def pain_synthesizer_node(state: TreclState) -> dict:
     Hiring Needs & Signals:
     {jobs}
     
+    {oss_context}
+    
     Candidate Profile:
     - Domain: {user_domain}
     - Tech Stack: {user_stack}
     
     Based on the above, deduce the company's top 3 technical pain points.
     Then, pitch exactly ONE specific, highly technical project idea that this candidate could build to solve one of those pain points using their exact tech stack.
+    If there is relevant Open Source context (issues or PRs), you may alternatively suggest solving a specific issue or reviewing a stale PR as your pitched 'project'.
     """
 
     messages = [

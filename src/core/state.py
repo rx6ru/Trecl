@@ -11,6 +11,12 @@ class GithubIssue(TypedDict):
     url: str
     repo_name: str
 
+class GithubPR(TypedDict):
+    """Schema for a single scraped GitHub Pull Request."""
+    title: str
+    url: str
+    repo_name: str
+    
 class TreclState(TypedDict):
     """
     The shared state dictionary updated by agents throughout the graph execution.
@@ -25,6 +31,8 @@ class TreclState(TypedDict):
             Populated by the `job_decoder_node`.
         github_issues (list[GithubIssue]): Valid open-source issues the candidate can solve.
             Populated by the `github_analyst_node`.
+        github_prs (list[GithubPR]): Stale or open PRs the candidate could review or fix.
+            Populated by the `github_analyst_node`.
         pain_points_ranked (str): Detailed ranking of company's technical pain points.
             Populated by the `pain_synthesizer_node`.
         project_ideas (str): Specific custom project ideas based on the user's stack.
@@ -38,6 +46,7 @@ class TreclState(TypedDict):
     company_summary: str
     company_jobs: str
     github_issues: list[GithubIssue]
+    github_prs: list[GithubPR]
     pain_points_ranked: str
     project_ideas: str
     cold_email: str
