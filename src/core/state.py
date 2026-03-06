@@ -72,6 +72,7 @@ class TreclState(TypedDict):
             Populated by the `pain_synthesizer_node`. (Will now only use selected_targets)
         cold_email (str): The generated targeted cold outreach email.
             Populated by the `cold_email_writer_node`.
+        knowledge_store_ready (bool): Flag indicating VectorDB is populated.
     """
     company_name: str
     user_domain: str
@@ -86,3 +87,4 @@ class TreclState(TypedDict):
     pain_points_ranked: str
     project_ideas: str
     cold_email: str
+    knowledge_store_ready: bool

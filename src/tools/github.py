@@ -17,6 +17,7 @@ from langchain_core.tools import tool
 from typing import Optional, List
 
 from core.config import GITHUB_ACCESS_TOKENS, USE_MOCK_GITHUB
+from core.knowledge_store import TreclKnowledgeStore
 from tools.search import TavilyClient, TAVILY_API_KEYS
 from llm.model import llm
 
@@ -119,6 +120,31 @@ def fetch_github_issues(org_handle: str) -> list[dict]:
         except Exception as e:
             print(f"[!] GitHub issue query failed ('{query[:40]}...'): {e}")
     
+    
+    # Store full issues in VectorDB
+    if results:
+        try:
+            store = TreclKnowledgeStore()
+            texts = []
+            metas = []
+            count = 0
+            for issue in g.search_issues(queries[0], sort="comments", order="desc"):
+                if count >= 10: break
+                if issue.body:
+                    texts.append(issue.body)
+                    metas.append({
+                        "company_name": org_handle, # Fallback, assumes handle is roughly company name
+                        "source_type": "github_issue",
+                        "url": issue.html_url,
+                        "timestamp_epoch": int(issue.created_at.timestamp()) if issue.created_at else 0
+                    })
+                count += 1
+            if texts:
+                print(f"[*] Pushing {len(texts)} full GitHub issues to VectorDB...")
+                store.ingest(texts, metas)
+        except Exception as e:
+            print(f"[!] Warning: Failed to push issues to VectorDB: {e}")
+            
     # Cap at 10 total to keep context manageable
     return results[:10]
 
@@ -156,6 +182,30 @@ def fetch_github_prs(org_handle: str) -> list[dict]:
     except Exception as e:
         print(f"[!] Failed to fetch GitHub PRs: {e}")
         
+    # Store full PRs in VectorDB
+    if results:
+        try:
+            store = TreclKnowledgeStore()
+            texts = []
+            metas = []
+            count = 0
+            for pr in g.search_issues(query, sort="updated", order="desc"):
+                if count >= 5: break
+                if pr.body:
+                    texts.append(pr.body)
+                    metas.append({
+                        "company_name": org_handle,
+                        "source_type": "github_issue",  # treating PR bodies similar to issues for RAG
+                        "url": pr.html_url,
+                        "timestamp_epoch": int(pr.created_at.timestamp()) if pr.created_at else 0
+                    })
+                count += 1
+            if texts:
+                print(f"[*] Pushing {len(texts)} full GitHub PRs to VectorDB...")
+                store.ingest(texts, metas)
+        except Exception as e:
+            print(f"[!] Warning: Failed to push PRs to VectorDB: {e}")
+            
     return results
 
 @tool

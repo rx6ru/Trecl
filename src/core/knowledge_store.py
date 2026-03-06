@@ -1,6 +1,7 @@
 import time
 import logging
-import google.generativeai as gemini_client
+from google import genai
+from google.genai import types
 from typing import List, Dict, Optional, Any
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
@@ -13,7 +14,7 @@ from qdrant_client.models import (
     MatchValue,
     Range
 )
-from src.core.config import QDRANT_URL, QDRANT_API_KEY, GEMINI_API_KEYS
+from core.config import QDRANT_URL, QDRANT_API_KEY, GEMINI_API_KEYS
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +22,13 @@ class TreclKnowledgeStore:
     """
     Central VectorDB wrapper for Trecl's Agentic RAG architecture.
     Uses Qdrant Cloud for storage and filtering, and Gemini for embeddings.
+    
+    Migrated to the google-genai SDK (google.genai.Client) as of March 2026.
+    See: https://ai.google.dev/gemini-api/docs/migrate
     """
     
     COLLECTION_NAME = "trecl_knowledge"
-    EMBEDDING_MODEL = "models/gemini-embedding-001"
+    EMBEDDING_MODEL = "gemini-embedding-001"
     VECTOR_SIZE = 768  # Gemini embedding size (configured for storage efficiency)
     CHUNK_SIZE = 1024
     CHUNK_OVERLAP = 100
@@ -36,7 +40,6 @@ class TreclKnowledgeStore:
             raise ValueError("GEMINI_API_KEYS must be set in the environment.")
         
         # Initialize Qdrant Client
-        # Determine if URLs local or remote
         self.client = QdrantClient(
             url=QDRANT_URL,
             api_key=QDRANT_API_KEY,
@@ -49,6 +52,10 @@ class TreclKnowledgeStore:
         )
         
         self._ensure_collection_exists()
+
+    def _get_gemini_client(self) -> genai.Client:
+        """Creates a new google.genai Client with the next available API key."""
+        return genai.Client(api_key=GEMINI_API_KEYS.get_next_key())
 
     def _ensure_collection_exists(self):
         """Idempotently creates the collection and payload indexes if they don't exist."""
@@ -81,11 +88,10 @@ class TreclKnowledgeStore:
                 field_name="timestamp_epoch",
                 field_schema="integer"
             )
-            # Binary Quantization would be enabled here in Tier 2/Production for massive scale
 
     def ingest(self, texts: List[str], metadatas: List[Dict[str, Any]]):
         """
-        Chunks text, embeds with task_type="retrieval_document", and stores in Qdrant.
+        Chunks text, embeds with task_type=RETRIEVAL_DOCUMENT, and stores in Qdrant.
         """
         if not texts:
             return
@@ -108,22 +114,20 @@ class TreclKnowledgeStore:
         if not all_chunks:
             return
 
-        # Embed all chunks
-        # Google's API can batch requests, but we need to respect potential limits.
-        # For simplicity, sending them down in one batch, but production code
-        # might want to chunk the API calls themselves if all_chunks > 100.
         logger.info(f"Embedding {len(all_chunks)} chunks into VectorDB...")
         
-        gemini_client.configure(api_key=GEMINI_API_KEYS.get_next_key())
-        response = gemini_client.embed_content(
+        # Use new google.genai Client for embeddings
+        gemini = self._get_gemini_client()
+        response = gemini.models.embed_content(
             model=self.EMBEDDING_MODEL,
-            content=all_chunks,
-            task_type="retrieval_document",
-            output_dimensionality=self.VECTOR_SIZE
+            contents=all_chunks,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT",
+                output_dimensionality=self.VECTOR_SIZE
+            )
         )
         
-        # Depending on API mapping, response is a dict with 'embedding' list of lists
-        embeddings = response.get('embedding', []) if isinstance(response, dict) else [resp['embedding'] for resp in response]
+        embeddings = [e.values for e in response.embeddings]
 
         points = [
             PointStruct(
@@ -148,18 +152,20 @@ class TreclKnowledgeStore:
         top_k: int = 5
     ) -> List[Dict[str, Any]]:
         """
-        Embeds query with task_type="retrieval_query" and searches Qdrant with filters.
+        Embeds query with task_type=RETRIEVAL_QUERY and searches Qdrant with filters.
         """
-        # Embed Query
-        gemini_client.configure(api_key=GEMINI_API_KEYS.get_next_key())
-        query_response = gemini_client.embed_content(
+        # Embed Query using new google.genai Client
+        gemini = self._get_gemini_client()
+        query_response = gemini.models.embed_content(
             model=self.EMBEDDING_MODEL,
-            content=query,
-            task_type="retrieval_query",
-            output_dimensionality=self.VECTOR_SIZE
+            contents=query,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY",
+                output_dimensionality=self.VECTOR_SIZE
+            )
         )
         
-        query_vector = query_response.get('embedding') if isinstance(query_response, dict) else query_response['embedding']
+        query_vector = query_response.embeddings[0].values
 
         # Construct filters
         must_conditions = [

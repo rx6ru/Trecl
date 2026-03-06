@@ -8,3 +8,5 @@ __pycache__/
 .devdocs/
 
 *.db
+
+.pytest_cache

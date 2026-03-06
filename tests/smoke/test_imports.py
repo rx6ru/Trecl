@@ -30,8 +30,7 @@ def test_import_llm():
 
 
 def test_import_tools_search():
-    from tools.search import perform_deep_company_research, perform_job_research
-    assert callable(perform_deep_company_research)
+    from tools.search import perform_job_research
     assert callable(perform_job_research)
 
 
@@ -52,14 +51,14 @@ def test_import_tools_github():
 
 def test_import_agents():
     from agents import (
-        company_researcher_node,
+        data_ingester_node,
         cold_email_writer_node,
         job_decoder_node,
         pain_synthesizer_node,
         github_analyst_node,
         opportunity_curator_node
     )
-    assert callable(company_researcher_node)
+    assert callable(data_ingester_node)
     assert callable(cold_email_writer_node)
     assert callable(job_decoder_node)
     assert callable(pain_synthesizer_node)

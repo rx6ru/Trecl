@@ -52,7 +52,7 @@ class TestMockPipeline:
         node_names = set(graph.nodes.keys())
 
         expected_nodes = {
-            "researcher",
+            "data_ingester",
             "job_decoder",
             "github_analyst",
             "opportunity_curator",

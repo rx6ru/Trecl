@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "google-generativeai>=0.8.6",
+    "google-genai>=1.66.0",
     "langchain-cerebras>=0.8.2",
     "langchain-text-splitters>=1.1.1",
     "langgraph>=1.0.10",

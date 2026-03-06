@@ -7,7 +7,7 @@ from langgraph.graph import StateGraph, START, END
 
 from core.state import TreclState
 from agents import (
-    company_researcher_node,
+    data_ingester_node,
     job_decoder_node,
     pain_synthesizer_node,
     github_analyst_node,
@@ -22,7 +22,7 @@ def build_graph(checkpointer=None):
     Constructs the LangGraph execution flow.
     
     Nodes:
-        - researcher: Scrapes the web and extracts facts.
+        - data_ingester: Scrapes the web, chunks and stores in VectorDB, then synthesizes facts.
         - job_decoder: Analyzes job postings.
         - github_analyst: Finds open source issues and PRs.
         - opportunity_curator: Filters, tiers, and ranks opportunities.
@@ -30,9 +30,9 @@ def build_graph(checkpointer=None):
         - writer: Drafts a cold email using those facts.
         
     Flow:
-        START -> researcher      ---\ 
-        START -> job_decoder     ---> opportunity_curator -> pain_synthesizer -> writer -> END
-        START -> github_analyst  ---/
+                                     ---\ 
+        START -> data_ingester  -->  ---> opportunity_curator -> pain_synthesizer -> writer -> END
+                                     ---/
         
     Returns:
         CompiledGraph: The executable state machine.
@@ -41,19 +41,20 @@ def build_graph(checkpointer=None):
     graph = StateGraph(TreclState)
     
     # 2. Add Nodes (Agents)
-    graph.add_node("researcher", company_researcher_node)
+    graph.add_node("data_ingester", data_ingester_node)
     graph.add_node("job_decoder", job_decoder_node)
     graph.add_node("github_analyst", github_analyst_node)
     graph.add_node("opportunity_curator", opportunity_curator_node)
     graph.add_node("pain_synthesizer", pain_synthesizer_node)
     graph.add_node("writer", cold_email_writer_node)
     
-    # 3. Define the DAG Execution Order (Parallel Fan-Out / Fan-In)
-    graph.add_edge(START, "researcher")
-    graph.add_edge(START, "job_decoder")
-    graph.add_edge(START, "github_analyst")
+    # 3. Define the DAG Execution Order
+    # Data Ingester blocks the fan-out to ensure VectorDB is populated
+    graph.add_edge(START, "data_ingester")
+    graph.add_edge("data_ingester", "job_decoder")
+    graph.add_edge("data_ingester", "github_analyst")
     
-    graph.add_edge("researcher", "opportunity_curator")
+    # Fan-in from discovery nodes to the curator
     graph.add_edge("job_decoder", "opportunity_curator")
     graph.add_edge("github_analyst", "opportunity_curator")
     
@@ -107,7 +108,8 @@ if __name__ == "__main__":
                 "selected_targets": [],
                 "pain_points_ranked": "",
                 "project_ideas": "",
-                "cold_email": ""
+                "cold_email": "",
+                "knowledge_store_ready": False
             }, config):
                 for node_name, node_state in event.items():
                     print(f"\n\n------------------ Node: {node_name} ------------------")
