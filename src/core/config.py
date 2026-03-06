@@ -57,5 +57,10 @@ USE_MOCK_SEARCH = os.getenv("USE_MOCK_SEARCH", "true").lower() == "true"
 USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "true").lower() == "true"
 USE_MOCK_GITHUB = os.getenv("USE_MOCK_GITHUB", "true").lower() == "true"
 
-# Single PAT for Github (Not round-robined for now)
-GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+# GitHub Config
+GITHUB_ACCESS_TOKENS = get_required_env_list("GITHUB_ACCESS_TOKEN")
+
+# Knowledge Store Config (Agentic RAG)
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+GEMINI_API_KEYS = get_required_env_list("GEMINI_API_KEYS")

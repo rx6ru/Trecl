@@ -16,7 +16,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.tools import tool
 from typing import Optional, List
 
-from core.config import GITHUB_ACCESS_TOKEN, USE_MOCK_GITHUB
+from core.config import GITHUB_ACCESS_TOKENS, USE_MOCK_GITHUB
 from tools.search import TavilyClient, TAVILY_API_KEYS
 from llm.model import llm
 
@@ -85,10 +85,10 @@ def fetch_github_issues(org_handle: str) -> list[dict]:
             {"title": "Fix slow PostgreSQL indexing on delivery route query", "url": "https://github.com/zeptonow/routing-engine/issues/142", "repo_name": "routing-engine"}
         ]
         
-    if not org_handle or not GITHUB_ACCESS_TOKEN:
+    if not org_handle or not GITHUB_ACCESS_TOKENS:
         return []
         
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
     results = []
     seen_urls = set()
     
@@ -132,10 +132,10 @@ def fetch_github_prs(org_handle: str) -> list[dict]:
             {"title": "fix: Resolve K8s memory leak in Go worker pool", "url": "https://github.com/zeptonow/worker-pool/pull/42", "repo_name": "worker-pool"}
         ]
         
-    if not org_handle or not GITHUB_ACCESS_TOKEN:
+    if not org_handle or not GITHUB_ACCESS_TOKENS:
         return []
         
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
     results = []
     
     # Search for open PRs that have no reviews and are not drafts
@@ -181,8 +181,8 @@ def search_issues(
         limit: The maximum number of issues to return. Keep this low (5-10) to avoid overloading your context window. Defaults to 10.
         search_query: Optional keyword search string to find specific topics within the repo's issues (e.g., "memory leak" or "postgres").
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return [{"error": "GITHUB_ACCESS_TOKEN is not set."}]
+    if not GITHUB_ACCESS_TOKENS:
+        return [{"error": "GITHUB_ACCESS_TOKENS is not set."}]
     
     # GUARDRAIL 1: Reject if list_org_repos has never been called
     if not _org_discovered:
@@ -228,7 +228,7 @@ def search_issues(
                              f"search_query is for plain keywords only (e.g., 'memory leak')."
                 }]
         
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
     
     # 1. Base query parts
     query_parts = [f"repo:{repo_name}", "is:issue"]
@@ -303,8 +303,8 @@ def search_prs(
         limit: Maximum number of PRs to return. Keep low (3-5). Defaults to 5.
         search_query: Optional keyword search (e.g., "helm" or "docker").
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return [{"error": "GITHUB_ACCESS_TOKEN is not set."}]
+    if not GITHUB_ACCESS_TOKENS:
+        return [{"error": "GITHUB_ACCESS_TOKENS is not set."}]
 
     # GUARDRAIL: Reject if list_org_repos has never been called
     if not _org_discovered:
@@ -329,7 +329,7 @@ def search_prs(
                              f"search_query is for plain keywords only."
                 }]
 
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
 
     # Build query — PRs use "is:pr" instead of "is:issue"
     query_parts = [f"repo:{repo_name}", "is:pr"]
@@ -387,10 +387,10 @@ def get_repo_labels(repo_name: str) -> list[dict]:
         A list of dicts with keys "name" (the exact label string) and "open_issues" (number of
         open issues using this label). Sorted by open_issues descending. Capped at 30 labels.
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return [{"error": "GITHUB_ACCESS_TOKEN is not set."}]
+    if not GITHUB_ACCESS_TOKENS:
+        return [{"error": "GITHUB_ACCESS_TOKENS is not set."}]
 
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
 
     try:
         repo = g.get_repo(repo_name)
@@ -450,10 +450,10 @@ def read_issue_thread(
         body_char_limit: Maximum characters for the issue body. Defaults to 500.
         comment_char_limit: Maximum characters per comment body. Defaults to 300.
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return {"error": "GITHUB_ACCESS_TOKEN is not set."}
+    if not GITHUB_ACCESS_TOKENS:
+        return {"error": "GITHUB_ACCESS_TOKENS is not set."}
 
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
 
     try:
         # Parse "owner/repo" and issue number from the URL
@@ -562,10 +562,10 @@ def get_repo_stats(repo_name: str) -> dict:
         A dictionary containing the repo's description, primary languages, star count,
         fork count, open issues count, open PR count, and the timestamp of the last code push.
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return {"error": "GITHUB_ACCESS_TOKEN is not set."}
+    if not GITHUB_ACCESS_TOKENS:
+        return {"error": "GITHUB_ACCESS_TOKENS is not set."}
 
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
     
     try:
         repo = g.get_repo(repo_name)
@@ -611,10 +611,10 @@ def list_org_repos(org_handle: str, limit: int = 10) -> list[dict]:
         A list of dicts, each containing the repo's full name, star count,
         short description, and last push timestamp. Sorted by stars descending.
     """
-    if not GITHUB_ACCESS_TOKEN:
-        return [{"error": "GITHUB_ACCESS_TOKEN is not set."}]
+    if not GITHUB_ACCESS_TOKENS:
+        return [{"error": "GITHUB_ACCESS_TOKENS is not set."}]
 
-    g = Github(GITHUB_ACCESS_TOKEN)
+    g = Github(GITHUB_ACCESS_TOKENS.get_next_key())
 
     try:
         org = g.get_organization(org_handle)
